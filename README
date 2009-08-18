@@ -1,0 +1,24 @@
+===========
+static v0.1
+===========
+
+Description
+-----------
+
+static is an open source online document management system. That's a fancy way of saying "you upload and download files to and from it".
+
+It's RESTful! It outputs in HTML, JSON and XML! It supports users, groups and permissions!
+
+It also has modular support for file-type previews so feel free to add support where you think it's lacking.
+
+Future work
+-----------
+
+OAuth support.
+
+
+Version information
+-------------------
+
+0.1:
+	- First release
