@@ -33,3 +33,14 @@ else if(ARC_ENV=='stage'){
 else{ //live
 	define('WEBROOT','http://www.qkschool.org.uk/assets');
 }
+
+// File store
+if(ARC_ENV=='dev'){
+	define('FILESTORE','/Library/WebServer/Documents/qkschool.org.uk/static/filestore');
+}
+else if(ARC_ENV=='stage'){
+	define('FILESTORE','');
+}
+else{ //live
+	define('FILESTORE','/usr/local/psa/home/vhosts/qkschool.org.uk/httpdocs/static/filestore');
+}

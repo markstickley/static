@@ -9,13 +9,19 @@ $ext = substr(strrchr($path[count($path)-1], '.'), 1);
 // Set up an autoloader - this runs when it encounters a classname it doesn't recognise
 function __autoload($class_name){
 	global $registry;
-	$filename = $class_name.'.class.php';
-	$file = $registry->modelPath.'/'.$filename;
+	
+	// define possible locations of the file
+	$locations = array();
+	$locations[] = $registry->modelPath.'/'.$class_name.'.class.php'; //models
+	$locations[] = $registry->libPath.'/'.str_replace('_', '/', $class_name).'.php'; //library files, define subfolders with _ in class name
 
-	if(!file_exists($file)){
-		return false;
+	foreach($locations as $location){
+		if(file_exists($location)){
+			require($location);
+		}
 	}
-	include ($file);
+	
+	return false;
 }
 
 // Define the file system root location of arc. We assume it's in a folder called arc.
@@ -26,6 +32,7 @@ require_once(ARC_ROOT.'/src/BaseController.class.php');
 require_once(ARC_ROOT.'/src/Registry.class.php');
 require_once(ARC_ROOT.'/src/Router.class.php');
 require_once(ARC_ROOT.'/src/View.class.php');
+require_once(ARC_ROOT.'/src/Partial.class.php');
 
 // Include all the library files
 require_once(ARC_ROOT.'/src/lib/mysql.Database.class.php');
@@ -48,7 +55,8 @@ $registry->viewPath = FSROOT.'/php/views';
 $registry->controllerPath = FSROOT.'/php/controllers';
 $registry->layoutPath = FSROOT.'/php/layouts';
 $registry->helperPath = FSROOT.'/php/helpers';
-$registry->partialPath = FSROOT.'/php/partials';
+$registry->partialPath = FSROOT.'/php/views/partials';
+$registry->libPath = FSROOT.'/php/lib';
 
 // Create a MySQL database object and add it to the registry
 $registry->db = new Database(DBSRVR,DBNAME,DBUSER,DBPASS);
@@ -58,6 +66,14 @@ $registry->router = new Router($registry);
 
 //Add a new Vars object to the registry
 $registry->var = Vars::getInstance();
+
+// Figure out which request method to use. If specified in the url it overrides the request method in the header.
+if(in_array(strtolower($registry->var->get('_method')), array('get','put','post','delete'))){
+	$registry->request_method = strtolower($registry->var->get('_method'));
+}
+else{
+	$registry->request_method = strtolower($_SERVER['REQUEST_METHOD']);
+}
 
 //Add the layout to the registry
 $registry->format = $registry->var->get('_format')?$registry->var->get('_format'):'';

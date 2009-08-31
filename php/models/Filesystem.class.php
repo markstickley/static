@@ -16,33 +16,52 @@ class Filesystem{
 * @returns	File	Instance of File
 */
 	public function getFile($path){
-		if(is_numeric($path)){
-			$sql = "SELECT * FROM files WHERE id=".$path;
-		}
-		else if(is_string($path)){
-			$pathParts = explode('/', $path);
-
-			$whereclauses = array();
-			$sql = "SELECT f.id FROM folders f0";
-			for($i=0;$i<count($pathParts)-1;$i++){
-				$pathPart = $pathParts[$i];
-				if($i!=(count($pathParts)-2)){
-					$sql .= " LEFT JOIN folders f".($i+1)." ON (f".$i.".id = f".($i+1).".parent)";
-				}
-				$whereclauses[] = "f".$i.".name='".$pathPart."'";
+		if(is_string($path)){
+			$id = File::getIdFromPath($path);
+			if(!$id){
+				return false;
 			}
-			//Add the file clause
-			$sql .= " LEFT JOIN files f ON (f.parent = f".(count($pathParts)-2).".id)";
-			//Add the conditions for the folders
-			$sql .= " WHERE ".implode(' AND ', $whereclauses);
-			//And the condition for the file
-			$sql .= " AND f.name='".$pathParts[count($pathParts)-1]."'";
-			
-			$result = $this->db->query($sql,'assoc');
-			
-			return $this->db->num_rows()?new File($result['id']):false;
+		}
+		else if(is_numeric($path)){
+			$id = $path;
 		}
 		else{
+			return false;
+		}
+		
+		try{
+			$file = new File($id);
+			return $file;
+		}
+		catch(Exception $e){
+			return false;
+		}
+	}
+	
+/*
+* getFolder - gets a folder
+* @arg	$path	Mixed	The path to the folder (string) OR the numerical folder id (int)
+* @returns	Folder	Instance of Folder
+*/
+	public function getFolder($path){
+		if(is_string($path)){
+			$id = Folder::getIdFromPath($path);
+			if(!$id){
+				return false;
+			}
+		}
+		else if(is_numeric($path)){
+			$id = $path;
+		}
+		else{
+			return false;
+		}
+		
+		try{
+			$folder = new Folder($id);
+			return $folder;
+		}
+		catch(Exception $e){
 			return false;
 		}
 	}
@@ -59,22 +78,18 @@ class Filesystem{
 		
 		return $this->getFile($path)?true:false;
 	}
-	
-	public function isFolder($path){
-		$pathParts = explode('/', $path);
-		
-		$whereclauses = array();
-		$sql = "SELECT * FROM folders f0";
-		for($i=0;$i<count($pathParts);$i++){
-			$pathPart = $pathParts[$i];
-			if($i!=(count($pathParts)-1)){
-				$sql .= " LEFT JOIN folders f".($i+1)." ON (f".$i.".id = f".($i+1).".parent)";
-			}
-			$whereclauses[] = "f".$i.".name='".$pathPart."'";
-		}
-		$sql .= " WHERE ".implode(' AND ', $whereclauses);
 
-		return $this->db->num_rows($sql)?true:false;
+/*
+* isFolder - evaluates a path for validity
+* @arg	$path	String	The string representing the path
+* @returns	Boolean	True if the path is valid, false otherwise
+*/	
+	public function isFolder($path){
+		if(!is_string($path) || is_numeric($path)){
+			return false;
+		}
+		
+		return $this->getFolder($path)?true:false;
 	}
 	
 }

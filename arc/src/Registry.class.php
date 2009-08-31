@@ -27,5 +27,9 @@ Class Registry {
 	public function __get($index){
 		return isset($this->vars[$index])?$this->vars[$index]:null;
 	}
+	
+	public function __isset($index){
+		return isset($this->vars[$index])?true:false;
+	}
 
 }

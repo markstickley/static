@@ -9,6 +9,7 @@ class Router {
 	private $args = array();
 	
 	public $controllerFile;
+	public $controllerName;
 	public $controller;
 	public $action;
 
@@ -22,42 +23,78 @@ class Router {
 	}
 	
 	public function start(){
+		$this->loadController();
+		$this->runControllerAction();
+	}
+	
+	
+	public function loadController($controllerName=null){
 		// Set up and run the controller class
 		// First get the absolute path to the controller file
-		$this->controllerFile = $this->getControllerFile();
+		if(is_null($controllerName)){
+			$this->controllerName = $this->getControllerFromPath($this->registry->path);
+		}
+		else{
+			$this->controllerName = $controllerName;
+		}
+		$this->controllerFile = $this->getControllerFile($this->controllerName);
 		
 		// Better check that file exists
 		if(!is_readable($this->controllerFile)){
-			HTML::error404('Missing controller: <em>'.$this->controller.'</em>');
+			HTML::error404('Missing controller: <em>'.$this->controllerName.'</em>');
 		}
 		
 		// Next include that file
-		include($this->controllerFile);
+		require_once($this->controllerFile);
 		
 		// Now create a new instance of that controller
-		$controllerClass = ucfirst($this->controller).'Controller';
-		$controller = new $controllerClass($this->registry);
+		$controllerClass = ucfirst($this->controllerName).'Controller';
+		$this->controller = new $controllerClass($this->registry);
+	}
+	
+	public function runControllerAction($action=null){
+		if(is_null($action)){
+			$this->action = $this->getControllerActionFromPath($this->registry->path);
+		}
+		else{
+			$this->action = $action;
+		}
 		
-		//Finally, check and call the action on the controller
+		if(is_null($this->controller)){
+			throw new Exception('Cannot run action \''.$this->action.'\' on a null controller');
+		}
+		
+		//check and call the action on the controller
 		$actionFunction = $this->action.'Action';
-		if(!is_callable(array($controller,$actionFunction))){
-			if(is_callable(array($controller,'indexAction'))){
+		if(!is_callable(array($this->controller,$actionFunction))){
+			if(is_callable(array($this->controller,'indexAction'))){
 				$actionFunction = 'indexAction';
 			}
 			else{
 				HTML::error404('Action not found: <em>'.$this->action.'</em>');
 			}
 		}
-		$controller->$actionFunction(); //run the action
+		$this->controller->$actionFunction(); //run the action
 	}
 	
+	//returns the name of the current controller
+	public function getControllerName(){
+		return $this->controllerName;
+	}
 	
-	private function getControllerFile(){		
-		// Set the controller and action names from the path
-		// They will be 'index' if they aren't set
-		$this->controller = (isset($this->registry->path[0]) && !empty($this->registry->path[0]))?$this->registry->path[0]:'index';
-		$this->action = (isset($this->registry->path[1]) && !empty($this->registry->path[1]))?$this->registry->path[1]:'index';
-		
-		return $this->registry->controllerPath.'/'.ucfirst($this->controller).'Controller.php';
+	private function getControllerFromPath($path){
+		return (isset($path[0]) && !empty($path[0]))?$path[0]:'index';
+	}
+	
+	private function getControllerActionFromPath($path){
+		return (isset($path[1]) && !empty($path[1]))?$path[1]:'index';
+	}
+	
+	private function getControllerFile($controller=null){
+		if(is_null($controller)){
+			$controller = $this->getControllerFromPath(); //use the path of the current page by default
+		}
+				
+		return $this->registry->controllerPath.'/'.ucfirst($controller).'Controller.php';
 	}
 }

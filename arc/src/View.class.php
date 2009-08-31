@@ -68,13 +68,26 @@ class View{
 		include($this->layoutFile);
 	}
 	
+	
+	
+	// Protected functions... only for views.
+	
+	protected function render_partial($file, $args){
+		$p = new Partial($this->registry, $file, $args);
+		$p->render();
+	}
+	
+	
+	
+	// Private functions. Only for this class.
+	
 	// Calculates the path to the view. If a view is provided then it uses that one
 	private function getViewPath($view=null){
 		//if there's a format, use it.
 		$format = $this->registry->format?'.'.$this->registry->format:'';
 		$view = is_null($view)?$this->registry->router->action:$view;
 		
-		$this->view = $this->registry->router->controller.'/'.$view.$format;
+		$this->view = $this->registry->router->controllerName.'/'.$view.$format;
 		return $this->registry->viewPath.'/'.$this->view.'.php';
 	}
 	
